@@ -70,23 +70,34 @@ def build_book(data: DataFrame, book_info: Book):
     binary.text = book_info.image
 
     tree = etree.ElementTree(root)
-    tree.write(f"{book_info.file_name}.fb2", encoding="utf-8", xml_declaration=True, pretty_print=True)
+    tree.write(f"books/{book_info.file_name}.fb2", encoding="utf-8", xml_declaration=True, pretty_print=True)
 
     print(f"Книга '{book_info.title}' успішно створено!")
 
 
 def get_volumes(chapters) -> dict:
     """Приймає список глав і повертає словник у форматі volume:last_chapter"""
-    res = {}
+    gaps = []
     volume = 1
     for i, chapter in enumerate(chapters):
         if f"Том {volume + 1}" in chapter:
-            res[volume] = i
+            gaps.append(i)
             volume += 1
+    gaps.append(i + 1)
 
-    res[volume] = i + 1
+    start = 0
+    i = 0
+    while i < len(gaps):
+        if gaps[i] - start > 300:
+            new_gap = (gaps[i] - start) // 2
+            gaps = gaps[:i] + [gaps[i] - new_gap] + gaps[i:]
+            i = 0
+            start = 0
+        else:
+            start = gaps[i]
+            i += 1
 
-    return res
+    return {i + 1:gap for i, gap in enumerate(gaps)}
 
 def encode_image_to_base64(image_path):
     """Зчитує зображення, кодує у base64 і визначає MIME-тип."""
@@ -100,7 +111,7 @@ def encode_image_to_base64(image_path):
     return encoded_string, mime_type
 
 
-if __name__ == "__main__":
+def main():
     data_file = "ranobelib.csv"
     image_file = "shadow_slave_cover.jpg"
     image_data = encode_image_to_base64(image_file)
@@ -127,3 +138,6 @@ if __name__ == "__main__":
         build_book(df[first_chapter:last_chapter], new_book)
         first_chapter = last_chapter
 
+
+if __name__ == "__main__":
+    main()
