@@ -1,3 +1,4 @@
+import logging
 import time
 
 from bs4 import BeautifulSoup as BS
@@ -5,6 +6,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
+logger = logging.getLogger(__name__)
 headers = {'User-Agent': 'Mozilla/5.0'}
 
 
@@ -19,58 +21,68 @@ def get_chapters_list(
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--kiosk-printing")
 
-    print("Start scrapping")
+    logging.info("Start scrapping")
     with webdriver.Chrome(options=chrome_options) as driver:
         driver.get(url)
 
         is_parce = True
 
-        while is_parce:
-            url = driver.current_url
-            print(f"Getting soup from url: {url}")
-            time.sleep(5)
+        try:
+            while is_parce:
+                url = driver.current_url
+                logger.info(f"Getting soup from url: {url}")
+                time.sleep(5)
 
-            soup = BS(driver.page_source, "html.parser")
+                soup = BS(driver.page_source, "html.parser")
 
-            name_tmp = soup.find("h1").text.split("-")
-            content = [
-                p.text
-                for p in soup.find("div", class_="text-content").find_all("p")
-            ]
-            chapters.append(
-                {
-                    "number": name_tmp[0].strip(),
-                    "name": name_tmp[1].strip(),
-                    "content": "\n  ".join(content),
-                    "url": url
-                }
-            )
+                name_tmp = soup.find("h1").text.split("-")
+                if len(name_tmp) == 2:
+                    name = name_tmp[1].strip()
+                else:
+                    name = ""
+                content = [
+                    p.text
+                    for p in soup.find("div", class_="text-content").find_all("p")
+                ]
+                chapters.append(
+                    {
+                        "number": name_tmp[0].strip(),
+                        "name": name,
+                        "content": "\n  ".join(content),
+                        "url": url
+                    }
+                )
+                logger.info(f"Chapter '{'-'.join(name_tmp)}' was added")
 
-            with open("last_parsed.html", "w") as f:
-                f.write(soup.prettify())
-                print("File was written")
+                with open("last_parsed.html", "w") as f:
+                    f.write(soup.prettify())
 
-            next_url = [
-                link
-                for link in driver.find_elements(By.CSS_SELECTOR, "a.btn")
-                if "впер" in link.text.lower()
-            ]
-            if len(next_url) == 1:
-                next_url = next_url[0]
-            elif not next_url:
-                pass
-            else:
-                next_url = None
-                print("ERROR: More links then expected")
+                next_url = [
+                    link
+                    for link in driver.find_elements(By.CSS_SELECTOR, "a.btn")
+                    if "впер" in link.text.lower()
+                ]
+                if len(next_url) == 1:
+                    next_url = next_url[0]
+                elif not next_url:
+                    pass
+                else:
+                    next_url = None
+                    logger.error("ERROR: More links then expected")
 
-            if next_url:
-                next_url.click()
-            else:
-                print("No more chapters.")
-                print(f"Last url: {url}")
-                is_parce = False
+                if next_url:
+                    next_url.click()
+                else:
+                    logger.info("No more chapters.")
+                    logger.info(f"Last url: {url}")
+                    is_parce = False
 
-    return chapters
+        except KeyboardInterrupt:
+            logger.info("Scraping interrupted manually. Saving what we have...")
+        except Exception as e:
+            logger.info(f"Error while scraping: {e}")
+        finally:
+            return chapters
 
 
 if __name__ == "__main__":
@@ -79,4 +91,4 @@ if __name__ == "__main__":
     soups = get_chapters_list(ranobe_url)
 
     for soup in soups:
-        print(soup)
+        logger.info(soup)
