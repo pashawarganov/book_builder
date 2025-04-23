@@ -54,7 +54,7 @@ def get_chapters_list(
                 )
                 logger.info(f"Chapter '{'-'.join(name_tmp)}' was added")
 
-                with open("last_parsed.html", "w") as f:
+                with open("last_parsed.html", "w", encoding="utf-8") as f:
                     f.write(soup.prettify())
 
                 next_url = [
