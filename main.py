@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 
-from spider import get_chapters_list
+from spider import get_ranobelib_chapters, get_jaomix_chapters
 from fb2_builder import generate_book
 import logging
 
@@ -30,7 +30,13 @@ def generate_csv(url: str, file_name: str) -> None:
     else:
         old_df = pd.DataFrame(columns=["number", "name", "content", "url"])
 
-    chapters = get_chapters_list(url)    # Grab from site
+    if "ranobelib" in url:
+        chapters = get_ranobelib_chapters(url)    # Grab from site
+    elif "jaomix" in url:
+        chapters = get_jaomix_chapters(url)
+    else:
+        logger.error(f"Wrong url!!! Scrapper don`t maintain url: {url}")
+        return None
     new_df = pd.DataFrame(chapters)
     new_df = new_df[old_df.columns]
 
@@ -41,7 +47,6 @@ def generate_csv(url: str, file_name: str) -> None:
     chapters_df.to_csv(f"cache/{file_name}.csv", index=False)
     logger.info(f"CSV file {file_name} was written")
 
-    return file_name
 
 if __name__ == '__main__':
     # ranobe_url = "https://ranobelib.me/ru/150605--lord-of-the-mysteries-2/read/v1/c1?bid=18841&ui=4619610"
@@ -49,15 +54,42 @@ if __name__ == '__main__':
     file_name = "shadow-slave_2"
     # generate_csv(ranobe_url, file_name)
 
-def main():
-    ranobe_url = "https://ranobelib.me/ru/122448--shadow-slave/read/v1/c1?bid=13947"
-    file_name = generate_csv(ranobe_url)
+    volumes_ci = {
+        "Nightmare": 109,
+        "Lightseeker": 263,
+        "Conspirer": 494,
+        "Sinner": 735,
+        "Demoness": 884,
+        "Dreamweaver": 1034,
+        "Second Law": 1115,
+        "Eternal Aeon": 1179,
+    }
+    generate_book(
+        "lord-of-the-mysteries-2",
+        "Cycle of inevitability",
+        "fantasy",
+        "Cuttlefish That Loves Diving",
+        "2023",
+        volumes=volumes_ci,
+        image_path="media/circle_cover.jpg"
+    )
+
+    volumes_ss = {
+        "Child of Shadows": 95,
+        "Demon of Change": 350,
+        "Prince of Nothing": 600,
+        "Chain Breaker": 750,
+        "Dread Night": 1060,
+        "All the Devils Are Here": 1230,
+        "The Tomb of Ariel": 1590,
+        "Lord of Shadows": 1840,
+        "Throne of War": 2260,
+    }
     # generate_book(
-    #     file_name,
+    #     "shadow-slave",
+    #     "Shadow slave",
     #     "fantasy",
     #     "Guiltythree",
-    #     "2022"
+    #     "2022",
+    #     volumes=volumes_ss,
     # )
-
-if __name__ == '__main__':
-    main()
