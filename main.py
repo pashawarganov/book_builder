@@ -19,8 +19,7 @@ logger = logging.getLogger(__name__)
 logger.info("Logger initialized")
 
 
-def generate_csv(url):
-    file_name = url.split("/")[4].split("--")[1]
+def generate_csv(url: str, file_name: str) -> None:
     if os.path.exists(f"cache/{file_name}.csv"):
         logger.info(f"Found {file_name}.csv")
         old_df = pd.read_csv(f"cache/{file_name}.csv")
@@ -44,6 +43,11 @@ def generate_csv(url):
 
     return file_name
 
+if __name__ == '__main__':
+    # ranobe_url = "https://ranobelib.me/ru/150605--lord-of-the-mysteries-2/read/v1/c1?bid=18841&ui=4619610"
+    ranobe_url = "https://jaomix.ru/tenevoj-rab/glava-1-koshmar-nachinaetsya/"
+    file_name = "shadow-slave_2"
+    # generate_csv(ranobe_url, file_name)
 
 def main():
     ranobe_url = "https://ranobelib.me/ru/122448--shadow-slave/read/v1/c1?bid=13947"
