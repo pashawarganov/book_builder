@@ -9,10 +9,9 @@ from selenium.webdriver.common.by import By
 logger = logging.getLogger(__name__)
 headers = {'User-Agent': 'Mozilla/5.0'}
 
-
-def get_chapters_list(
+def get_ranobelib_chapters(
         url: str,
-) -> [BS]:
+) -> [dict]:
     chapters = []
 
     chrome_options = Options()
@@ -31,7 +30,13 @@ def get_chapters_list(
             while is_parce:
                 url = driver.current_url
                 logger.info(f"Getting soup from url: {url}")
-                time.sleep(5)
+                time.sleep(3)
+
+                buttons = driver.find_elements(By.CSS_SELECTOR, "button.is-outline")
+                if len(buttons) == 2:
+                    logger.info("Closing cookie window")
+                    buttons[1].click()
+                    time.sleep(2)
 
                 soup = BS(driver.page_source, "html.parser")
 
@@ -71,6 +76,7 @@ def get_chapters_list(
                     logger.error("ERROR: More links then expected")
 
                 if next_url:
+                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                     next_url.click()
                 else:
                     logger.info("No more chapters.")
@@ -86,9 +92,5 @@ def get_chapters_list(
 
 
 if __name__ == "__main__":
-    ranobe_url = "https://ranobelib.me/ru/122448--shadow-slave/read/v3/c721?bid=13303&ui=4619610"
-    file_name = ranobe_url.split("/")[4].split("--")[1]
-    soups = get_chapters_list(ranobe_url)
-
-    for soup in soups:
-        logger.info(soup)
+    ranobe_url = "https://ranobelib.me/ru/122448--shadow-slave/read/v1/c1?bid=13947"
+    result = get_ranobelib_chapters(ranobe_url)
